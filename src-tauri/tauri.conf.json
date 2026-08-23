@@ -1,0 +1,61 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "PKT Study",
+  "version": "0.1.20",
+  "identifier": "com.cj.pkt.study",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:4200",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "PKT 프로젝트",
+        "width": 1280,
+        "height": 900,
+        "minWidth": 1024,
+        "minHeight": 700,
+        "fullscreen": false,
+        "resizable": true,
+        "decorations": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": {
+          "x": -100,
+          "y": 0
+        },
+        "dragDropEnabled": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "resources": ["../scripts/db-sync.sh"],
+    "targets": [
+      "app",
+      "dmg",
+      "nsis"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEIwNEFFMzhCMUUwRDc3Q0EKUldUS2R3MGVpK05Lc0hRcnlxZG4vZ2NQVjE2YlRuWmZYV0l2VzJQL2hmWmRid1R5K2had3pITGYK",
+      "endpoints": [
+        "https://github.com/dota-pilot1/pkt-study-tauri/releases/latest/download/latest.json"
+      ]
+    }
+  }
+}

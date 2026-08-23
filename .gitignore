@@ -1,0 +1,10 @@
+.DS_Store
+.claude/
+node_modules/
+.vite/
+dist/
+src-tauri/target/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
