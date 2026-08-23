@@ -41,8 +41,8 @@ API 주소를 바꿀 때는 `VITE_API_BASE` 환경변수와
 4. `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`의 버전을 같은 값으로 올리고 태그를 푸시합니다.
 
 ```bash
-git tag v0.1.21
-git push origin v0.1.21
+git tag v0.1.22
+git push origin v0.1.22
 ```
 
 GitHub Actions가 Windows 설치 파일과 macOS universal DMG, updater `latest.json`을 자동으로
