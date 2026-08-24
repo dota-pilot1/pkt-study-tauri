@@ -18,9 +18,10 @@ export async function safeFetch(input: URL | RequestInfo, init?: RequestInit): P
   return fetch(input, init);
 }
 
-// MES 프로토타입 서버의 로컬 API를 사용한다.
+// 설치본은 빌드 환경변수가 누락되어도 운영 API에 연결되어야 한다.
+// 개발 모드에서는 getApiTarget()이 local을 선택하므로 로컬 API를 계속 사용한다.
 const LOCAL_API_BASE = "http://localhost:4201";
-const DEPLOY_API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:4201";
+const DEPLOY_API_BASE = import.meta.env.VITE_API_BASE ?? "https://api.hibot-docu.com/api";
 
 const ACCESS_KEY = "mes.study.accessToken";
 const REFRESH_KEY = "mes.study.refreshToken";
