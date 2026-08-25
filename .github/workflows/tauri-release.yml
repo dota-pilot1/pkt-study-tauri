@@ -1,26 +1,19 @@
 name: PKT Study Tauri Release
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Existing release tag to publish Windows assets to"
+        required: true
+        type: string
 
 permissions:
   contents: write
 
 jobs:
   build-and-release:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: macos-latest
-            args: "--target universal-apple-darwin"
-            rust-targets: "aarch64-apple-darwin,x86_64-apple-darwin"
-          - platform: windows-latest
-            args: ""
-            rust-targets: ""
-    runs-on: ${{ matrix.platform }}
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -29,10 +22,18 @@ jobs:
         with:
           node-version: lts/*
 
+      - name: Verify release version
+        shell: bash
+        run: |
+          APP_VERSION="v$(node -p "require('./package.json').version")"
+          TAURI_VERSION="v$(node -p "require('./src-tauri/tauri.conf.json').version")"
+          if [ "${{ inputs.release_tag }}" != "$APP_VERSION" ] || [ "${{ inputs.release_tag }}" != "$TAURI_VERSION" ]; then
+            echo "::error::Release tag and app versions do not match."
+            exit 1
+          fi
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.rust-targets }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -49,17 +50,11 @@ jobs:
           VITE_API_BASE: ${{ secrets.VITE_API_BASE }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           projectPath: .
-          tagName: ${{ github.ref_name }}
-          releaseName: "PKT Study ${{ github.ref_name }}"
-          releaseBody: "자동 빌드된 PKT Study 릴리즈입니다. macOS universal DMG와 Windows 설치 파일을 제공합니다."
+          tagName: ${{ inputs.release_tag }}
+          releaseName: "PKT Study ${{ inputs.release_tag }}"
+          releaseBody: "macOS는 로컬 빌드·공증하고 Windows는 GitHub Actions에서 빌드한 PKT Study 릴리즈입니다."
           releaseDraft: false
           prerelease: false
-          args: ${{ matrix.args }}
+          args: "--bundles nsis"

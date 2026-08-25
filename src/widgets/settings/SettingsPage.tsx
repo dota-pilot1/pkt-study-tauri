@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { AlertTriangle, ArrowDownToLine, ArrowUpFromLine, Database, Loader2, MonitorCog, RefreshCw, Settings2 } from "lucide-react";
+import { AlertTriangle, ArrowDownToLine, ArrowUpFromLine, CircleAlert, CircleCheck, Database, Download, Loader2, MonitorCog, RefreshCw, Settings2 } from "lucide-react";
 import PageHeader from "../../shared/ui/PageHeader";
 import { API_BASE, getApiTarget, type ApiTarget } from "../../shared/api/client";
 import { APP_PROFILE } from "../../shared/config/app-modules";
+import { useAppUpdate } from "../../shared/lib/useAppUpdate";
 
 const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 const APP_VERSION = __APP_VERSION__;
@@ -21,6 +22,7 @@ type TabId = (typeof TABS)[number]["id"];
 function SettingsPage() {
   const [activeTab, setActiveTab] = useState<TabId>("general");
   const apiTarget = getApiTarget();
+  const appUpdate = useAppUpdate(APP_VERSION);
 
   return (
     <>
@@ -93,19 +95,66 @@ function SettingsPage() {
             )}
 
             {activeTab === "update" && (
-              <>
-                <Row label="현재 버전" value={`v${APP_VERSION}`} />
-                <Note>
-                  새 버전은 GitHub Release의 Tauri updater 산출물로 배포됩니다. 현재 앱에는
-                  updater 기반만 연결되어 있으며, 화면에서 직접 확인·설치하는 기능은 다음 단계입니다.
-                </Note>
-              </>
+              <UpdatePanel appUpdate={appUpdate} />
             )}
 
             {activeTab === "database" && <DatabaseSyncPanel apiTarget={apiTarget} />}
           </div>
         </div>
       </div>
+    </>
+  );
+}
+
+function UpdatePanel({ appUpdate }: { appUpdate: ReturnType<typeof useAppUpdate> }) {
+  const { state, busy } = appUpdate;
+  const hasUpdate = state.status === "available" || state.status === "downloading";
+
+  return (
+    <>
+      <div className="rounded-md border border-surface-border-soft bg-surface-raised px-4 py-4">
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[13px] font-bold text-text-primary">현재 버전</p>
+            <p className="mt-1 text-[13px] font-semibold tabular-nums text-text-secondary">v{state.currentVersion}</p>
+          </div>
+          <button type="button" disabled={busy} onClick={() => void appUpdate.checkForUpdate()} className="ui-icon-button h-9 shrink-0 gap-2 px-4 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50">
+            {state.status === "checking" ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+            {state.status === "checking" ? "확인 중..." : "업데이트 확인"}
+          </button>
+        </div>
+      </div>
+      {state.status === "uptodate" && (
+        <div className="flex items-center gap-2 rounded-md border border-emerald-300/60 bg-emerald-50 px-4 py-3 text-[12px] font-semibold text-emerald-900">
+          <CircleCheck className="size-4 shrink-0" />최신 버전을 사용 중입니다.
+        </div>
+      )}
+      {state.status === "error" && (
+        <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-[12px] font-semibold leading-5 text-destructive">
+          <CircleAlert className="mt-0.5 size-4 shrink-0" /><span>{state.message || "업데이트를 확인하지 못했습니다."}</span>
+        </div>
+      )}
+      {hasUpdate && (
+        <div className="rounded-md border border-brand-border bg-brand-glass px-4 py-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-[14px] font-black text-text-primary">새 버전 v{state.availableVersion}</p>
+              <p className="mt-1 text-[12px] font-semibold text-text-secondary">다운로드와 설치가 끝나면 앱이 자동으로 재시작됩니다.</p>
+            </div>
+            <button type="button" disabled={busy} onClick={() => void appUpdate.installUpdate()} className="ui-icon-button-brand h-9 shrink-0 gap-2 px-4 text-sm font-black disabled:cursor-not-allowed disabled:opacity-50">
+              {state.status === "downloading" ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+              {state.status === "downloading" ? (state.progress > 0 ? `설치 중 ${state.progress}%` : "다운로드 중...") : "지금 업데이트"}
+            </button>
+          </div>
+          {state.notes && <p className="mt-3 whitespace-pre-line rounded-md bg-surface-raised/70 px-3 py-2 text-[12px] font-semibold leading-5 text-text-secondary">{state.notes}</p>}
+          {state.status === "downloading" && (
+            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-surface-strong" role="progressbar" aria-label="업데이트 다운로드 진행률" aria-valuemin={0} aria-valuemax={100} aria-valuenow={state.progress}>
+              <div className="h-full rounded-full bg-brand-primary transition-[width]" style={{ width: `${state.progress}%` }} />
+            </div>
+          )}
+        </div>
+      )}
+      <Note>업데이트는 GitHub Release의 서명된 Tauri 산출물을 사용합니다. 설치 중에는 앱을 종료하지 마세요.</Note>
     </>
   );
 }
